@@ -1,8 +1,9 @@
-use actix_cors::Cors;
-use actix_web::{App, HttpServer};
-use actix_web::middleware::Logger;
-use anyhow::{Context, Result};
 use crate::handlers::transform_image_handler;
+use actix_cors::Cors;
+use actix_web::middleware::Logger;
+use actix_web::{App, HttpServer};
+use actix_web_lab::web::spa;
+use anyhow::{Context, Result};
 
 mod handlers;
 mod image_transformer;
@@ -16,6 +17,13 @@ async fn main() -> Result<()> {
             .wrap(Logger::default())
             .wrap(Cors::default().allow_any_origin())
             .service(transform_image_handler)
+            .service(
+                spa()
+                    .index_file("./static/index.html")
+                    .static_resources_mount("/")
+                    .static_resources_location("./static")
+                    .finish(),
+            )
     })
     .bind(("127.0.0.1", 8080))?
     .run()
