@@ -1,3 +1,4 @@
+use std::io::Read;
 use crate::image_transformer::{ImageTransformer, Transformation};
 use actix_multipart::form::MultipartForm;
 use actix_multipart::form::tempfile::TempFile;
@@ -13,7 +14,7 @@ struct TransformForm {
 
 #[post("/transform")]
 async fn transform_image_handler(
-    MultipartForm(form): MultipartForm<TransformForm>,
+    MultipartForm(mut form): MultipartForm<TransformForm>,
 ) -> impl Responder {
     let transformations: Vec<Transformation> = match serde_json::from_str(&form.transformations) {
         Ok(t) => t,
@@ -21,8 +22,6 @@ async fn transform_image_handler(
             return HttpResponse::BadRequest().body(format!("Invalid transformations JSON: {e}"));
         }
     };
-
-    println!("{:?}", transformations);
 
     let mut ops: Vec<Box<dyn FnMut(DynamicImage) -> DynamicImage>> = Vec::new();
     for t in &transformations {
@@ -57,7 +56,12 @@ async fn transform_image_handler(
         }
     }
 
-    match ImageTransformer::transform_image_from_path(form.file.file.path(), ops) {
+    let mut buf = Vec::new();
+    if let Err(e) = form.file.file.read_to_end(&mut buf) {
+        return HttpResponse::InternalServerError().body(format!("Failed to read file: {e}"));
+    }
+    
+    match ImageTransformer::transform_image_from_bytes(&buf, ops) { 
         Ok(buf) => HttpResponse::Ok().content_type("image/png").body(buf),
         Err(e) => HttpResponse::InternalServerError().body(format!("Image processing failed: {e}")),
     }
