@@ -8,7 +8,6 @@ mod image_transformer;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    env_logger::init();
     println!("Server running at http://localhost:8080 ...");
     HttpServer::new(move || {
         App::new().service(transform_image_handler).service(
@@ -19,7 +18,7 @@ async fn main() -> Result<()> {
                 .finish(),
         )
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 8080))?
     .workers(2)
     .run()
     .await
