@@ -10,6 +10,7 @@ pub enum Transformation {
     Grayscale,
     Rotate { direction: String },
     Resize { percent: f32 },
+    CropSquare,
 }
 
 pub struct ImageTransformer;

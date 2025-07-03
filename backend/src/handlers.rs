@@ -5,6 +5,7 @@ use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::text::Text;
 use actix_web::{HttpResponse, Responder, post};
 use image::{DynamicImage, GenericImageView};
+use image::imageops::crop_imm;
 
 #[derive(MultipartForm)]
 struct TransformForm {
@@ -52,6 +53,15 @@ async fn transform_image_handler(
                     let nh = ((h as f32) * p / 100.0).round() as u32;
                     img.resize(nw, nh, image::imageops::Lanczos3)
                 }));
+            },
+            Transformation::CropSquare => {
+                ops.push(Box::new(|img| {
+                    let (w, h) = img.dimensions();
+                    let size = w.min(h);
+                    let x = (w - size) / 2;
+                    let y = (h - size) / 2;
+                    crop_imm(&img, x, y, size, size).to_image().into()
+                }));
             }
         }
     }
@@ -60,8 +70,8 @@ async fn transform_image_handler(
     if let Err(e) = form.file.file.read_to_end(&mut buf) {
         return HttpResponse::InternalServerError().body(format!("Failed to read file: {e}"));
     }
-    
-    match ImageTransformer::transform_image_from_bytes(&buf, ops) { 
+
+    match ImageTransformer::transform_image_from_bytes(&buf, ops) {
         Ok(buf) => HttpResponse::Ok().content_type("image/png").body(buf),
         Err(e) => HttpResponse::InternalServerError().body(format!("Image processing failed: {e}")),
     }

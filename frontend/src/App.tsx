@@ -62,6 +62,9 @@ export default function ImageConverter() {
             if (type === "resize") {
                 return {type, percent};
             }
+            if (type === "crop_square") {
+                return {type};
+            }
             // For invert and grayscale, only send type
             return {type};
         });
@@ -77,6 +80,8 @@ export default function ImageConverter() {
                 return `Rotate ${operation.direction === "left" ? "Left" : "Right"}`
             case "resize":
                 return `Resize ${operation.percent}%`
+            case "crop_square":
+                return "Crop to Square"
             default:
                 return operation.type
         }
@@ -107,7 +112,7 @@ export default function ImageConverter() {
                     setResult(null)
                     alert("Image processing failed")
                 }
-            } catch (error) {
+            } catch {
                 setResult(null)
                 alert("Image processing failed")
             } finally {
@@ -251,6 +256,22 @@ export default function ImageConverter() {
                             </div>
 
                             <Separator/>
+
+                            {/* Crop to Square */}
+                            <div className="space-y-3">
+                                <Label className="text-sm font-semibold text-slate-700">Crop</Label>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => addOperation({type: "crop_square"})}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Resize className="w-4 h-4 rotate-45"/>
+                                        Crop to Square
+                                    </Button>
+                                </div>
+                            </div>
 
                             {/* Operations Queue */}
                             <div className="space-y-3">
